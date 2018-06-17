@@ -1,55 +1,132 @@
 ﻿using System;
 using System.Threading;
-namespace seeSharp
+using System.Collections.Generic;
+
+class Program
 {
-    class Program
+
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            Threader threader = new Threader();
-            ThreadStart job = new ThreadStart(threader.DoWork);
-            Thread thread = new Thread(job);
-            Thread.CurrentThread.Name = "MainThread";
+        Thread.CurrentThread.Name = "main";
 
-            thread.Start();
+        CustomThreads custom = new CustomThreads();
+        ThreadPooler pooler = new ThreadPooler();
 
-            for (int i = 0; i < 5; i++)
-            {
-                Console.WriteLine("{0}: {1},", Thread.CurrentThread.Name, i);
-            }
-        }
+        custom.DoWork();
+        Console.WriteLine("custom threadr finished");
+        pooler.DoWork();
+
+    }
 
        
-    }
-    public class Threader
+}
+public class Threader
+{
+    public List<Thread> threads { get; set; }
+    public Threader()
     {
-        public void DoWork()
-        {
-            // Queue a task.  
-            System.Threading.ThreadPool.QueueUserWorkItem(
-                new System.Threading.WaitCallback(SomeLongTask));
-            // Queue another task.  
-            System.Threading.ThreadPool.QueueUserWorkItem(
-                new System.Threading.WaitCallback(AnotherLongTask));
-        }
+        threads = new List<Thread>();
+    }
+    public virtual int DoWork()
+    {
+        return 1;
+    }
 
-        private void SomeLongTask(Object state)
-        {
-            Thread.CurrentThread.Name = "thread 2";
-            for (int i = 0; i < 5; i++)
-            {
-                Console.WriteLine("{0}: {1},", Thread.CurrentThread.Name, i);
-            }
-        }
+}
+public class CustomThreads : Threader
+{
+    public CustomThreads() : base()
+    {
 
-        private void AnotherLongTask(Object state)
+    }
+    public override int DoWork() 
+    {
+        Work work = new Work();
+        ThreadStart[] jobs = { new ThreadStart(work.SomeLongTask), new ThreadStart(work.AnotherLongTask) };
+        int num = 0;
+        foreach (ThreadStart job in jobs)
         {
-            Thread.CurrentThread.Name = "thread 3";
-            for (int i = 0; i < 5; i++)
-            {
-                Console.WriteLine("{0}: {1},", Thread.CurrentThread.Name, i);
-            }
+            Thread thread = new Thread(job);
+            thread.Name = $"{num++}";
+            threads.Add(thread);
         }
+        foreach (Thread thread in threads)
+        {
+            thread.Start();
+        }
+        work.SomeLongTask();
+        foreach (Thread thread in threads)
+        {
+            thread.Join();
+        }
+        return 1;
+    }
+}
+
+public class ThreadPooler : Threader
+{
+    public ThreadPooler() : base()
+    {
+
+    }
+    public override int DoWork()
+    {
+        Work work = new Work();
+        System.Threading.ThreadPool.QueueUserWorkItem(
+            new System.Threading.WaitCallback(work.SomeLongTask)
+        );
+        System.Threading.ThreadPool.QueueUserWorkItem(
+            new System.Threading.WaitCallback(work.AnotherLongTask)
+        );
+        work.SomeLongTask();
+
+        return 1;
     }
     
+}
+
+public class Work
+{
+    public void SomeLongTask()
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            Console.WriteLine("thread name: {0}, i: {1}, shorttask", Thread.CurrentThread.Name, i);
+            Thread.Sleep(1);
+
+        }
+    }
+
+    public void AnotherLongTask()
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            Console.WriteLine("thread name: {0}, i: {1}, longtask", Thread.CurrentThread.Name, i);
+            Thread.Sleep(3);
+
+        }
+    }
+
+    public void SomeLongTask(Object state)
+    {
+        Thread.CurrentThread.Name = "0";
+        for (int i = 0; i < 10; i++)
+        {
+            Console.WriteLine("thread name: {0}, i: {1}, shorttask", Thread.CurrentThread.Name, i);
+            Thread.Sleep(1);
+
+        }
+    }
+
+    public void AnotherLongTask(Object state)
+    {
+        Thread.CurrentThread.Name = "1";
+
+        for (int i = 0; i < 10; i++)
+        {
+            Console.WriteLine("thread name: {0}, i: {1}, longtask", Thread.CurrentThread.Name, i);
+            Thread.Sleep(3);
+
+        }
+    }
 }
