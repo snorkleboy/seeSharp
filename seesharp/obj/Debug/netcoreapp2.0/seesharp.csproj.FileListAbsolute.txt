@@ -1,0 +1,11 @@
+C:\Users\TimKh\source\repos\seesharp\seesharp\bin\Debug\netcoreapp2.0\seesharp.deps.json
+C:\Users\TimKh\source\repos\seesharp\seesharp\bin\Debug\netcoreapp2.0\seesharp.runtimeconfig.json
+C:\Users\TimKh\source\repos\seesharp\seesharp\bin\Debug\netcoreapp2.0\seesharp.runtimeconfig.dev.json
+C:\Users\TimKh\source\repos\seesharp\seesharp\bin\Debug\netcoreapp2.0\seesharp.dll
+C:\Users\TimKh\source\repos\seesharp\seesharp\bin\Debug\netcoreapp2.0\seesharp.pdb
+C:\Users\TimKh\source\repos\seesharp\seesharp\obj\Debug\netcoreapp2.0\seesharp.csprojAssemblyReference.cache
+C:\Users\TimKh\source\repos\seesharp\seesharp\obj\Debug\netcoreapp2.0\seesharp.csproj.CoreCompileInputs.cache
+C:\Users\TimKh\source\repos\seesharp\seesharp\obj\Debug\netcoreapp2.0\seesharp.AssemblyInfoInputs.cache
+C:\Users\TimKh\source\repos\seesharp\seesharp\obj\Debug\netcoreapp2.0\seesharp.AssemblyInfo.cs
+C:\Users\TimKh\source\repos\seesharp\seesharp\obj\Debug\netcoreapp2.0\seesharp.dll
+C:\Users\TimKh\source\repos\seesharp\seesharp\obj\Debug\netcoreapp2.0\seesharp.pdb
