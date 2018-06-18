@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Threading;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+
 
 class Program
 {
@@ -11,37 +14,27 @@ class Program
 
         CustomThreads custom = new CustomThreads();
         ThreadPooler pooler = new ThreadPooler();
-
+        MultiTask parrallel = new MultiTask();
         custom.DoWork();
         Console.WriteLine("custom threadr finished");
         pooler.DoWork();
+        Console.WriteLine("pooler finished");
+        parrallel.DoWork();
+        Console.WriteLine("paralell finished");
+
+
 
     }
 
-       
-}
-public class Threader
-{
-    public List<Thread> threads { get; set; }
-    public Threader()
-    {
-        threads = new List<Thread>();
-    }
-    public virtual int DoWork()
-    {
-        return 1;
-    }
 
 }
-public class CustomThreads : Threader
-{
-    public CustomThreads() : base()
-    {
 
-    }
-    public override int DoWork() 
+public class CustomThreads
+{
+    public int DoWork() 
     {
         Work work = new Work();
+        List<Thread> threads = new List<Thread>();
         ThreadStart[] jobs = { new ThreadStart(work.SomeLongTask), new ThreadStart(work.AnotherLongTask) };
         int num = 0;
         foreach (ThreadStart job in jobs)
@@ -54,35 +47,118 @@ public class CustomThreads : Threader
         {
             thread.Start();
         }
-        work.SomeLongTask();
         foreach (Thread thread in threads)
         {
             thread.Join();
         }
-        return 1;
-    }
-}
-
-public class ThreadPooler : Threader
-{
-    public ThreadPooler() : base()
-    {
-
-    }
-    public override int DoWork()
-    {
-        Work work = new Work();
-        System.Threading.ThreadPool.QueueUserWorkItem(
-            new System.Threading.WaitCallback(work.SomeLongTask)
-        );
-        System.Threading.ThreadPool.QueueUserWorkItem(
-            new System.Threading.WaitCallback(work.AnotherLongTask)
-        );
         work.SomeLongTask();
 
         return 1;
     }
+}
     
+public class ThreadPooler 
+{
+    public static int counter = 0;
+    public int DoWork()
+    {
+        using (ManualResetEvent resetEvent = new ManualResetEvent(false))
+        {
+            Work work = new Work();
+            ManualResetEvent[] handles = new ManualResetEvent[2];
+            for (int i = 0; i < 2; i++)
+            {
+                handles[i] = new ManualResetEvent(false);
+            }
+
+            ThreadPool.QueueUserWorkItem(
+                new WaitCallback((x) => {
+                    Thread.CurrentThread.Name = "2";
+                    work.SomeLongTask();
+                    handles[(int) ThreadPooler.counter].Set();
+                    Interlocked.Increment(ref ThreadPooler.counter);
+                }) );
+            ThreadPool.QueueUserWorkItem(
+                new WaitCallback((x) => {
+                    Thread.CurrentThread.Name = "3";
+                    work.AnotherLongTask();
+                    handles[(int) ThreadPooler.counter].Set();
+                    Interlocked.Increment(ref ThreadPooler.counter);
+
+                }));
+            WaitHandle.WaitAll(handles);
+            work.SomeLongTask();
+            Console.WriteLine("counter = {0}", counter);
+
+
+        }
+
+        return 1;
+    }
+    
+}
+
+
+public class MultiTask
+{
+
+    public int DoWork()
+    {
+        Work work = new Work();
+        Parallel.For(0, 3, (index) =>
+        {
+            if (index == 0)
+            {
+                try
+                {
+                    Thread.CurrentThread.Name = "4";
+
+                }
+                catch
+                {
+                    Console.WriteLine("thread cant be renamed probably main thread, {0}", Thread.CurrentThread.Name);
+                }
+                finally
+                {
+                    work.SomeLongTask();
+                }
+            }
+            else if (index == 1)
+            {
+                try
+                {
+                    Thread.CurrentThread.Name = "5";
+
+                }
+                catch
+                {
+                    Console.WriteLine("thread cant be renamed, {0}", Thread.CurrentThread.Name);
+                }
+                finally
+                {
+                    work.AnotherLongTask();
+                }
+            }
+            else
+            {
+                try
+                {
+                    Thread.CurrentThread.Name = "6";
+
+                }
+                catch
+                {
+                    Console.WriteLine("thread cant be renamed, {0}", Thread.CurrentThread.Name);
+                }
+                finally
+                {
+                    work.AnotherLongTask();
+                }
+            }
+        });
+        return 1;
+
+    }
 }
 
 public class Work
@@ -109,7 +185,6 @@ public class Work
 
     public void SomeLongTask(Object state)
     {
-        Thread.CurrentThread.Name = "0";
         for (int i = 0; i < 10; i++)
         {
             Console.WriteLine("thread name: {0}, i: {1}, shorttask", Thread.CurrentThread.Name, i);
@@ -120,7 +195,6 @@ public class Work
 
     public void AnotherLongTask(Object state)
     {
-        Thread.CurrentThread.Name = "1";
 
         for (int i = 0; i < 10; i++)
         {
@@ -130,3 +204,4 @@ public class Work
         }
     }
 }
+
