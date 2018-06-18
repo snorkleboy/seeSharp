@@ -15,12 +15,15 @@ class Program
         CustomThreads custom = new CustomThreads();
         ThreadPooler pooler = new ThreadPooler();
         MultiTask parrallel = new MultiTask();
+        Tasker tasker = new Tasker();
         custom.DoWork();
         Console.WriteLine("custom threadr finished");
         pooler.DoWork();
         Console.WriteLine("pooler finished");
         parrallel.DoWork();
-        Console.WriteLine("paralell finished");
+        Console.WriteLine("paralel finished");
+        tasker.DoWork();
+        Console.WriteLine("tasker finished");
 
 
 
@@ -33,9 +36,8 @@ public class CustomThreads
 {
     public int DoWork() 
     {
-        Work work = new Work();
         List<Thread> threads = new List<Thread>();
-        ThreadStart[] jobs = { new ThreadStart(work.SomeLongTask), new ThreadStart(work.AnotherLongTask) };
+        ThreadStart[] jobs = { new ThreadStart(Work.SomeLongTask), new ThreadStart(Work.AnotherLongTask) };
         int num = 0;
         foreach (ThreadStart job in jobs)
         {
@@ -51,7 +53,7 @@ public class CustomThreads
         {
             thread.Join();
         }
-        work.SomeLongTask();
+        Work.SomeLongTask();
 
         return 1;
     }
@@ -64,7 +66,6 @@ public class ThreadPooler
     {
         using (ManualResetEvent resetEvent = new ManualResetEvent(false))
         {
-            Work work = new Work();
             ManualResetEvent[] handles = new ManualResetEvent[2];
             for (int i = 0; i < 2; i++)
             {
@@ -74,20 +75,20 @@ public class ThreadPooler
             ThreadPool.QueueUserWorkItem(
                 new WaitCallback((x) => {
                     Thread.CurrentThread.Name = "2";
-                    work.SomeLongTask();
+                    Work.SomeLongTask();
                     handles[(int) ThreadPooler.counter].Set();
                     Interlocked.Increment(ref ThreadPooler.counter);
                 }) );
             ThreadPool.QueueUserWorkItem(
                 new WaitCallback((x) => {
                     Thread.CurrentThread.Name = "3";
-                    work.AnotherLongTask();
+                    Work.AnotherLongTask();
                     handles[(int) ThreadPooler.counter].Set();
                     Interlocked.Increment(ref ThreadPooler.counter);
 
                 }));
             WaitHandle.WaitAll(handles);
-            work.SomeLongTask();
+            Work.SomeLongTask();
             Console.WriteLine("counter = {0}", counter);
 
 
@@ -104,7 +105,6 @@ public class MultiTask
 
     public int DoWork()
     {
-        Work work = new Work();
         Parallel.For(0, 3, (index) =>
         {
             if (index == 0)
@@ -120,7 +120,7 @@ public class MultiTask
                 }
                 finally
                 {
-                    work.SomeLongTask();
+                    Work.SomeLongTask();
                 }
             }
             else if (index == 1)
@@ -136,7 +136,7 @@ public class MultiTask
                 }
                 finally
                 {
-                    work.AnotherLongTask();
+                    Work.AnotherLongTask();
                 }
             }
             else
@@ -152,7 +152,7 @@ public class MultiTask
                 }
                 finally
                 {
-                    work.AnotherLongTask();
+                    Work.AnotherLongTask();
                 }
             }
         });
@@ -160,10 +160,37 @@ public class MultiTask
 
     }
 }
-
-public class Work
+public class Tasker
 {
-    public void SomeLongTask()
+    public int DoWork()
+    {
+        Task<String>[] taskArray =
+        {
+           Task<String>.Factory.StartNew(()=>{
+               Thread.CurrentThread.Name = "7";
+               String res = Work.SomeLongTask(new object());
+               return res;
+           }),
+           Task<String>.Factory.StartNew(()=>{
+               Thread.CurrentThread.Name = "8";
+               String res = Work.AnotherLongTask(new object());
+               return res;
+           })
+        };
+        String results = "";
+        for (int i = 0; i < taskArray.Length; i++)
+        {
+            results += taskArray[i].Result;
+            Console.WriteLine("res {0}", taskArray[i].Result);
+        }
+        Console.WriteLine("results :{0}", results);
+        Work.AnotherLongTask();
+        return 1;
+    }
+}
+static public class Work
+{
+    static public void SomeLongTask()
     {
         for (int i = 0; i < 5; i++)
         {
@@ -171,9 +198,10 @@ public class Work
             Thread.Sleep(1);
 
         }
+
     }
 
-    public void AnotherLongTask()
+    static public void AnotherLongTask()
     {
         for (int i = 0; i < 5; i++)
         {
@@ -181,9 +209,10 @@ public class Work
             Thread.Sleep(3);
 
         }
+
     }
 
-    public void SomeLongTask(Object state)
+    static public string SomeLongTask(Object state)
     {
         for (int i = 0; i < 10; i++)
         {
@@ -191,9 +220,11 @@ public class Work
             Thread.Sleep(1);
 
         }
+        return "task done";
+
     }
 
-    public void AnotherLongTask(Object state)
+    static public string AnotherLongTask(Object state)
     {
 
         for (int i = 0; i < 10; i++)
@@ -202,6 +233,7 @@ public class Work
             Thread.Sleep(3);
 
         }
+        return "task done";
     }
 }
 
