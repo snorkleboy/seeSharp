@@ -17,11 +17,11 @@ class Program
         MultiTask parrallel = new MultiTask();
         Tasker tasker = new Tasker();
         custom.DoWork();
-        Console.WriteLine("custom threadr finished");
+        Console.WriteLine("custom threader finished");
         pooler.DoWork();
         Console.WriteLine("pooler finished");
         parrallel.DoWork();
-        Console.WriteLine("paralel finished");
+        Console.WriteLine("parrallel finished");
         tasker.DoWork();
         Console.WriteLine("tasker finished");
 
